@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Çarkıfelek – Konu Pekiştirme Oyunu</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&display=swap');
+
+  :root {
+    --bg: #0f1b35;
+    --card: #162040;
+    --accent1: #ff6b6b;
+    --accent2: #ffd93d;
+    --accent3: #6bcb77;
+    --accent4: #4d96ff;
+    --accent5: #ff922b;
+    --accent6: #cc5de8;
+    --white: #ffffff;
+    --shadow: 0 8px 32px rgba(0,0,0,0.4);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Nunito', sans-serif;
+    background: var(--bg);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+    overflow-x: hidden;
+  }
+
+  /* Stars background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      radial-gradient(1px 1px at 10% 20%, rgba(255,255,255,0.3) 0%, transparent 100%),
+      radial-gradient(1px 1px at 30% 70%, rgba(255,255,255,0.2) 0%, transparent 100%),
+      radial-gradient(1px 1px at 50% 10%, rgba(255,255,255,0.4) 0%, transparent 100%),
+      radial-gradient(1px 1px at 80% 40%, rgba(255,255,255,0.25) 0%, transparent 100%),
+      radial-gradient(2px 2px at 65% 85%, rgba(255,255,255,0.15) 0%, transparent 100%),
+      radial-gradient(1px 1px at 90% 15%, rgba(255,255,255,0.3) 0%, transparent 100%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  h1 {
+    font-family: 'Fredoka One', cursive;
+    font-size: 2.8rem;
+    color: var(--accent2);
+    text-shadow: 0 0 30px rgba(255,217,61,0.5);
+    margin-bottom: 6px;
+    letter-spacing: 2px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .subtitle {
+    color: rgba(255,255,255,0.5);
+    font-size: 0.95rem;
+    margin-bottom: 24px;
+    position: relative;
+    z-index: 1;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  .main-layout {
+    display: flex;
+    gap: 32px;
+    align-items: flex-start;
+    justify-content: center;
+    flex-wrap: wrap;
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 1200px;
+  }
+
+  /* ── WHEEL ── */
+  .wheel-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+  }
+
+  .wheel-container {
+    position: relative;
+    width: 400px;
+    height: 400px;
+  }
+
+  .wheel-pointer {
+    position: absolute;
+    top: -18px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 0;
+    border-left: 18px solid transparent;
+    border-right: 18px solid transparent;
+    border-top: 36px solid var(--accent2);
+    z-index: 10;
+    filter: drop-shadow(0 4px 8px rgba(255,217,61,0.6));
+  }
+
+  canvas#wheel {
+    border-radius: 50%;
+    box-shadow: 0 0 0 6px rgba(255,255,255,0.1), var(--shadow);
+    cursor: pointer;
+    transition: transform 0.1s;
+  }
+
+  canvas#wheel:hover { transform: scale(1.01); }
+
+  .spin-btn {
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.5rem;
+    padding: 14px 48px;
+    border: none;
+    border-radius: 50px;
+    background: linear-gradient(135deg, var(--accent2), var(--accent5));
+    color: #1a1a1a;
+    cursor: pointer;
+    box-shadow: 0 6px 24px rgba(255,217,61,0.4);
+    transition: all 0.2s;
+    letter-spacing: 1px;
+  }
+
+  .spin-btn:hover:not(:disabled) {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 32px rgba(255,217,61,0.6);
+  }
+
+  .spin-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  /* ── QUESTION CARD ── */
+  .question-section {
+    flex: 1;
+    min-width: 320px;
+    max-width: 480px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .category-badge {
+    display: inline-block;
+    padding: 6px 20px;
+    border-radius: 50px;
+    font-weight: 800;
+    font-size: 0.85rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+    opacity: 0;
+    transition: opacity 0.4s;
+  }
+
+  .question-card {
+    background: var(--card);
+    border-radius: 24px;
+    padding: 28px;
+    box-shadow: var(--shadow);
+    border: 2px solid rgba(255,255,255,0.06);
+    min-height: 120px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+  }
+
+  .question-text {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--white);
+    line-height: 1.5;
+    opacity: 0;
+    transition: opacity 0.5s;
+  }
+
+  .options-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  .option-btn {
+    background: rgba(255,255,255,0.06);
+    border: 2px solid rgba(255,255,255,0.1);
+    border-radius: 16px;
+    padding: 14px 16px;
+    color: var(--white);
+    font-family: 'Nunito', sans-serif;
+    font-weight: 700;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+    line-height: 1.3;
+  }
+
+  .option-btn:hover:not(:disabled) {
+    background: rgba(255,255,255,0.15);
+    border-color: rgba(255,255,255,0.3);
+    transform: translateY(-2px);
+  }
+
+  .option-btn.correct {
+    background: rgba(107,203,119,0.25);
+    border-color: var(--accent3);
+    color: var(--accent3);
+  }
+
+  .option-btn.wrong {
+    background: rgba(255,107,107,0.2);
+    border-color: var(--accent1);
+    color: var(--accent1);
+  }
+
+  .option-btn:disabled { cursor: default; }
+
+  /* ── SCORE / TEAMS ── */
+  .teams-section {
+    background: var(--card);
+    border-radius: 24px;
+    padding: 24px;
+    box-shadow: var(--shadow);
+    border: 2px solid rgba(255,255,255,0.06);
+    min-width: 200px;
+  }
+
+  .teams-title {
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.2rem;
+    color: var(--accent2);
+    margin-bottom: 16px;
+    text-align: center;
+    letter-spacing: 1px;
+  }
+
+  .team {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 14px;
+    border-radius: 12px;
+    margin-bottom: 10px;
+    font-weight: 700;
+    font-size: 1rem;
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .team.active {
+    border-color: currentColor;
+    background: rgba(255,255,255,0.07);
+  }
+
+  .team-score {
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.5rem;
+  }
+
+  .score-btns {
+    display: flex;
+    gap: 6px;
+    margin-top: 4px;
+  }
+
+  .score-btn {
+    background: rgba(255,255,255,0.1);
+    border: none;
+    border-radius: 8px;
+    color: white;
+    font-size: 1rem;
+    width: 32px; height: 32px;
+    cursor: pointer;
+    font-weight: 800;
+    transition: all 0.15s;
+  }
+
+  .score-btn:hover { background: rgba(255,255,255,0.25); transform: scale(1.1); }
+
+  .next-btn {
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.1rem;
+    padding: 12px 28px;
+    border: none;
+    border-radius: 50px;
+    background: linear-gradient(135deg, var(--accent4), var(--accent6));
+    color: white;
+    cursor: pointer;
+    box-shadow: 0 4px 16px rgba(77,150,255,0.35);
+    transition: all 0.2s;
+    display: none;
+    margin: 0 auto;
+    letter-spacing: 1px;
+  }
+
+  .next-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(77,150,255,0.5); }
+
+  /* ── RESULT OVERLAY ── */
+  .result-overlay {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s;
+  }
+
+  .result-overlay.show {
+    opacity: 1;
+    pointer-events: all;
+  }
+
+  .result-box {
+    background: var(--card);
+    border-radius: 28px;
+    padding: 40px 60px;
+    text-align: center;
+    border: 3px solid;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+    transform: scale(0.8);
+    transition: transform 0.3s;
+  }
+
+  .result-overlay.show .result-box { transform: scale(1); }
+
+  .result-emoji { font-size: 4rem; margin-bottom: 12px; }
+  .result-text { font-family: 'Fredoka One', cursive; font-size: 2rem; margin-bottom: 8px; }
+  .result-answer { font-size: 1rem; color: rgba(255,255,255,0.7); font-weight: 600; }
+
+  /* ── IDLE STATE ── */
+  .idle-message {
+    color: rgba(255,255,255,0.3);
+    font-size: 1.1rem;
+    font-weight: 600;
+    font-style: italic;
+  }
+
+  /* Confetti */
+  .confetti-piece {
+    position: fixed;
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+    animation: confetti-fall 1.5s ease-in forwards;
+    pointer-events: none;
+    z-index: 200;
+  }
+
+  @keyframes confetti-fall {
+    0% { transform: translateY(-20px) rotate(0deg); opacity: 1; }
+    100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+  }
+
+  .landing-hint {
+    color: rgba(255,255,255,0.4);
+    font-size: 0.9rem;
+    font-weight: 600;
+    text-align: center;
+    margin-top: 4px;
+  }
+</style>
+</head>
+<body>
+
+<h1>🎡 Çarkıfelek</h1>
+<p class="subtitle">Türkçe · Matematik · Hayat Bilgisi</p>
+
+<div class="main-layout">
+
+  <!-- WHEEL -->
+  <div class="wheel-section">
+    <div class="wheel-container">
+      <div class="wheel-pointer"></div>
+      <canvas id="wheel" width="400" height="400"></canvas>
+    </div>
+    <button class="spin-btn" id="spinBtn" onclick="spin()">🎲 ÇEVİR!</button>
+    <p class="landing-hint" id="landingHint"></p>
+  </div>
+
+  <!-- QUESTION -->
+  <div class="question-section">
+    <div>
+      <span class="category-badge" id="categoryBadge">–</span>
+    </div>
+    <div class="question-card">
+      <div class="question-text" id="questionText">
+        <span class="idle-message">Çarkı çevirerek başlayın! 🎉</span>
+      </div>
+    </div>
+    <div class="options-grid" id="optionsGrid"></div>
+    <button class="next-btn" id="nextBtn" onclick="nextRound()">Devam →</button>
+  </div>
+
+  <!-- TEAMS -->
+  <div class="teams-section">
+    <div class="teams-title">🏆 Puanlar</div>
+    <div id="teamsContainer"></div>
+    <div style="margin-top:16px; text-align:center;">
+      <button onclick="resetScores()" style="background:rgba(255,255,255,0.07);border:none;border-radius:10px;color:rgba(255,255,255,0.4);padding:8px 18px;cursor:pointer;font-family:'Nunito',sans-serif;font-weight:700;font-size:0.85rem;">🔄 Sıfırla</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- Result Overlay -->
+<div class="result-overlay" id="resultOverlay">
+  <div class="result-box" id="resultBox">
+    <div class="result-emoji" id="resultEmoji"></div>
+    <div class="result-text" id="resultText"></div>
+    <div class="result-answer" id="resultAnswer"></div>
+  </div>
+</div>
+
+<script>
+// ── DATA ──────────────────────────────────────────────────────────────────
+const questions = {
+  turkce: [
+    { q: '"Güneş" kelimesinin zıt anlamlısı nedir?', opts: ['Ay', 'Yıldız', 'Bulut', 'Gece'], ans: 3 },
+    { q: '"Koşmak" fiilinin geniş zaman hali hangisidir?', opts: ['Koştu', 'Koşar', 'Koşacak', 'Koşsun'], ans: 1 },
+    { q: '"Kitap okudum." cümlesinde özne nedir?', opts: ['Kitap', 'Okudum', 'Ben (gizli)', 'Yok'], ans: 2 },
+    { q: '"Kelebek" kelimesi kaç heceden oluşur?', opts: ['2', '3', '4', '1'], ans: 1 },
+    { q: 'Aşağıdakilerden hangisi isim değildir?', opts: ['Ev', 'Güzel', 'Araba', 'Deniz'], ans: 1 },
+    { q: '"Büyük" kelimesinin eş anlamlısı hangisidir?', opts: ['Küçük', 'İnce', 'Iri', 'Kısa'], ans: 2 },
+    { q: '"Anne" kelimesinde kaç ünsüz harf var?', opts: ['1', '2', '3', '4'], ans: 1 },
+    { q: 'Nokta hangi cümle sonunda kullanılır?', opts: ['Soru', 'Ünlem', 'Bildirme', 'Hepsi'], ans: 2 },
+  ],
+  matematik: [
+    { q: '47 + 36 = ?', opts: ['82', '83', '73', '84'], ans: 1 },
+    { q: '8 × 7 = ?', opts: ['54', '56', '48', '64'], ans: 1 },
+    { q: '120 ÷ 4 = ?', opts: ['25', '30', '28', '40'], ans: 1 },
+    { q: '3/4 ile 1/4 toplamı kaçtır?', opts: ['4/4 (1)', '2/4', '3/8', '4/8'], ans: 0 },
+    { q: 'Bir çeşitkenar üçgenin kaç kenarı eşittir?', opts: ['1', '2', '3', 'Hiçbiri'], ans: 2 },
+    { q: '250 – 138 = ?', opts: ['102', '112', '122', '108'], ans: 1 },
+    { q: '5² (5 kare) = ?', opts: ['10', '15', '20', '25'], ans: 3 },
+    { q: 'Bir dikdörtgenin çevresi nasıl hesaplanır?', opts: ['a × b', '2(a+b)', 'a+b', '4a'], ans: 1 },
+  ],
+  hayat: [
+    { q: 'Hangi organ kanı vücuda pompalar?', opts: ['Akciğer', 'Mide', 'Kalp', 'Böbrek'], ans: 2 },
+    { q: 'Türkiye\'nin başkenti neresidir?', opts: ['İstanbul', 'İzmir', 'Bursa', 'Ankara'], ans: 3 },
+    { q: 'Hangi mevsimde yapraklar dökülür?', opts: ['İlkbahar', 'Yaz', 'Sonbahar', 'Kış'], ans: 2 },
+    { q: 'Trafik ışıklarında "geç" anlamına gelen renk hangisidir?', opts: ['Kırmızı', 'Sarı', 'Yeşil', 'Mavi'], ans: 2 },
+    { q: 'Güneş sistemimizdeki en büyük gezegen hangisidir?', opts: ['Mars', 'Satürn', 'Jüpiter', 'Neptün'], ans: 2 },
+    { q: 'Bitkiler fotosentez için neye ihtiyaç duyar?', opts: ['Toprak ve su', 'Güneş, su, CO₂', 'Sadece su', 'Sadece toprak'], ans: 1 },
+    { q: 'Cumhuriyet hangi tarihte ilan edilmiştir?', opts: ['1920', '1923', '1919', '1929'], ans: 1 },
+    { q: 'İnsan vücudunda kaç kemik vardır?', opts: ['186', '206', '226', '246'], ans: 1 },
+  ]
+};
+
+// ── WHEEL CONFIG ──────────────────────────────────────────────────────────
+const segments = [
+  { label: 'Türkçe',        key: 'turkce',    color: '#ff6b6b', icon: '📚' },
+  { label: 'Matematik',     key: 'matematik', color: '#ffd93d', icon: '🔢' },
+  { label: 'Hayat Bilgisi', key: 'hayat',     color: '#6bcb77', icon: '🌍' },
+  { label: 'Türkçe',        key: 'turkce',    color: '#ff922b', icon: '📝' },
+  { label: 'Matematik',     key: 'matematik', color: '#4d96ff', icon: '➕' },
+  { label: 'Hayat Bilgisi', key: 'hayat',     color: '#cc5de8', icon: '🌱' },
+];
+
+const catColors = {
+  turkce:    { bg: '#ff6b6b', text: '#1a1a1a' },
+  matematik: { bg: '#ffd93d', text: '#1a1a1a' },
+  hayat:     { bg: '#6bcb77', text: '#1a1a1a' },
+};
+
+// ── TEAMS ─────────────────────────────────────────────────────────────────
+const teams = [
+  { name: '🔴 Takım 1', color: '#ff6b6b', score: 0 },
+  { name: '🔵 Takım 2', color: '#4d96ff', score: 0 },
+  { name: '🟢 Takım 3', color: '#6bcb77', score: 0 },
+];
+let activeTeam = 0;
+
+function renderTeams() {
+  const c = document.getElementById('teamsContainer');
+  c.innerHTML = '';
+  teams.forEach((t, i) => {
+    const div = document.createElement('div');
+    div.className = 'team' + (i === activeTeam ? ' active' : '');
+    div.style.color = t.color;
+    div.onclick = () => { activeTeam = i; renderTeams(); };
+    div.innerHTML = `
+      <span>${t.name}</span>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <div class="score-btns">
+          <button class="score-btn" onclick="event.stopPropagation();changeScore(${i},-1)">−</button>
+          <button class="score-btn" onclick="event.stopPropagation();changeScore(${i},1)">+</button>
+        </div>
+        <span class="team-score">${t.score}</span>
+      </div>`;
+    c.appendChild(div);
+  });
+}
+
+function changeScore(i, d) {
+  teams[i].score = Math.max(0, teams[i].score + d);
+  renderTeams();
+}
+
+function resetScores() {
+  teams.forEach(t => t.score = 0);
+  activeTeam = 0;
+  renderTeams();
+}
+
+// ── CANVAS WHEEL ──────────────────────────────────────────────────────────
+const canvas = document.getElementById('wheel');
+const ctx = canvas.getContext('2d');
+const cx = canvas.width / 2, cy = canvas.height / 2, r = cx - 4;
+const segAngle = (2 * Math.PI) / segments.length;
+let currentAngle = 0;
+let spinning = false;
+
+function drawWheel(angle) {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  segments.forEach((seg, i) => {
+    const start = angle + i * segAngle;
+    const end   = start + segAngle;
+    const mid   = start + segAngle / 2;
+
+    // Slice
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.arc(cx, cy, r, start, end);
+    ctx.closePath();
+    ctx.fillStyle = seg.color;
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(0,0,0,0.25)';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // Label
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(mid);
+    ctx.textAlign = 'right';
+    ctx.fillStyle = 'rgba(0,0,0,0.75)';
+    ctx.font = 'bold 13px Nunito, sans-serif';
+    ctx.fillText(seg.label, r - 14, 4);
+    ctx.font = '20px serif';
+    ctx.fillText(seg.icon, r - 80, 5);
+    ctx.restore();
+  });
+
+  // Center circle
+  ctx.beginPath();
+  ctx.arc(cx, cy, 28, 0, 2 * Math.PI);
+  ctx.fillStyle = '#0f1b35';
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(255,255,255,0.15)';
+  ctx.lineWidth = 3;
+  ctx.stroke();
+
+  ctx.font = 'bold 18px Nunito';
+  ctx.fillStyle = 'rgba(255,255,255,0.7)';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('🎡', cx, cy);
+}
+
+// ── SPIN LOGIC ────────────────────────────────────────────────────────────
+let usedIndices = { turkce: [], matematik: [], hayat: [] };
+
+function getQuestion(key) {
+  const pool = questions[key];
+  if (usedIndices[key].length >= pool.length) usedIndices[key] = [];
+  let idx;
+  do { idx = Math.floor(Math.random() * pool.length); } while (usedIndices[key].includes(idx));
+  usedIndices[key].push(idx);
+  return pool[idx];
+}
+
+function getLandedSegment(angle) {
+  // Pointer is at top (−π/2). Find which segment is under it.
+  let a = ((-angle - Math.PI / 2) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI);
+  return Math.floor(a / segAngle) % segments.length;
+}
+
+function spin() {
+  if (spinning) return;
+  spinning = true;
+  document.getElementById('spinBtn').disabled = true;
+  document.getElementById('nextBtn').style.display = 'none';
+  document.getElementById('optionsGrid').innerHTML = '';
+  document.getElementById('questionText').style.opacity = 0;
+  document.getElementById('questionText').innerHTML = '';
+  document.getElementById('categoryBadge').style.opacity = 0;
+  document.getElementById('landingHint').textContent = '';
+
+  const totalRotation = 2 * Math.PI * (5 + Math.random() * 5);
+  const duration = 3500 + Math.random() * 1000;
+  const startAngle = currentAngle;
+  const startTime = performance.now();
+
+  function easeOut(t) { return 1 - Math.pow(1 - t, 4); }
+
+  function animate(now) {
+    const elapsed = now - startTime;
+    const t = Math.min(elapsed / duration, 1);
+    currentAngle = startAngle + totalRotation * easeOut(t);
+    drawWheel(currentAngle);
+    if (t < 1) {
+      requestAnimationFrame(animate);
+    } else {
+      spinning = false;
+      const segIdx = getLandedSegment(currentAngle);
+      const seg = segments[segIdx];
+      showQuestion(seg);
+    }
+  }
+
+  requestAnimationFrame(animate);
+}
+
+// ── QUESTION DISPLAY ──────────────────────────────────────────────────────
+let currentQ = null;
+let answered = false;
+
+function showQuestion(seg) {
+  currentQ = getQuestion(seg.key);
+  answered = false;
+
+  const badge = document.getElementById('categoryBadge');
+  const cc = catColors[seg.key];
+  badge.textContent = seg.icon + ' ' + seg.label;
+  badge.style.background = cc.bg;
+  badge.style.color = cc.text;
+  badge.style.opacity = 1;
+
+  document.getElementById('landingHint').textContent = seg.icon + ' ' + seg.label + ' sorusu geliyor!';
+
+  setTimeout(() => {
+    const qt = document.getElementById('questionText');
+    qt.innerHTML = currentQ.q;
+    qt.style.opacity = 1;
+
+    const grid = document.getElementById('optionsGrid');
+    grid.innerHTML = '';
+    currentQ.opts.forEach((opt, i) => {
+      const btn = document.createElement('button');
+      btn.className = 'option-btn';
+      btn.textContent = opt;
+      btn.onclick = () => checkAnswer(i, btn);
+      grid.appendChild(btn);
+    });
+  }, 400);
+}
+
+function checkAnswer(chosen, btn) {
+  if (answered) return;
+  answered = true;
+  const correct = currentQ.ans;
+  const allBtns = document.querySelectorAll('.option-btn');
+
+  allBtns.forEach((b, i) => {
+    b.disabled = true;
+    if (i === correct) b.classList.add('correct');
+  });
+
+  if (chosen === correct) {
+    btn.classList.add('correct');
+    showResult(true, '');
+    teams[activeTeam].score++;
+    renderTeams();
+    spawnConfetti();
+  } else {
+    btn.classList.add('wrong');
+    showResult(false, 'Doğru cevap: ' + currentQ.opts[correct]);
+  }
+
+  document.getElementById('nextBtn').style.display = 'block';
+}
+
+// ── RESULT OVERLAY ────────────────────────────────────────────────────────
+function showResult(correct, hint) {
+  const overlay = document.getElementById('resultOverlay');
+  const box     = document.getElementById('resultBox');
+  document.getElementById('resultEmoji').textContent  = correct ? '🎉' : '😅';
+  document.getElementById('resultText').textContent   = correct ? 'Bravo! Doğru!' : 'Yanlış...';
+  document.getElementById('resultAnswer').textContent = hint;
+  box.style.borderColor = correct ? '#6bcb77' : '#ff6b6b';
+  document.getElementById('resultText').style.color   = correct ? '#6bcb77' : '#ff6b6b';
+  overlay.classList.add('show');
+  setTimeout(() => overlay.classList.remove('show'), 1600);
+}
+
+function nextRound() {
+  document.getElementById('nextBtn').style.display = 'none';
+  document.getElementById('spinBtn').disabled = false;
+  // Rotate to next team automatically
+  activeTeam = (activeTeam + 1) % teams.length;
+  renderTeams();
+}
+
+// ── CONFETTI ──────────────────────────────────────────────────────────────
+function spawnConfetti() {
+  const colors = ['#ff6b6b','#ffd93d','#6bcb77','#4d96ff','#cc5de8','#ff922b'];
+  for (let i = 0; i < 30; i++) {
+    setTimeout(() => {
+      const el = document.createElement('div');
+      el.className = 'confetti-piece';
+      el.style.left = Math.random() * 100 + 'vw';
+      el.style.top  = '-20px';
+      el.style.background = colors[Math.floor(Math.random() * colors.length)];
+      el.style.animationDuration = (1 + Math.random()) + 's';
+      el.style.transform = `rotate(${Math.random()*360}deg)`;
+      document.body.appendChild(el);
+      setTimeout(() => el.remove(), 2500);
+    }, i * 40);
+  }
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────
+drawWheel(currentAngle);
+renderTeams();
+</script>
+</body>
+</html>
